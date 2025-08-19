@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eBook Share</title>
+<style>
+body{font-family:Arial,sans-serif;background:#0b0d10;color:#e7ebf3;margin:0;padding:0;text-align:center;}
+header{padding:16px;font-size:1.5rem;background:#111318;color:#4f8cff;}
+.container{max-width:700px;margin:20px auto;padding:16px;}
+input[type="file"]{margin:12px 0;}
+button{padding:10px 16px;margin:8px;border:none;border-radius:8px;background:#4f8cff;color:#05060a;font-weight:bold;cursor:pointer;}
+ul{list-style:none;padding:0;}
+li{background:#161922;border:1px solid #232838;margin:8px 0;padding:12px;border-radius:8px;}
+a{color:#4f8cff;text-decoration:none;}
+</style>
+</head>
+<body>
+
+<header>eBook Share</header>
+<div class="container">
+  <h3>Upload Your PDF</h3>
+  <input type="file" id="pdfFile" accept="application/pdf">
+  <button onclick="uploadPDF()">Upload</button>
+
+  <h3>Available eBooks</h3>
+  <ul id="bookList"></ul>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="firebase.js"></script>
+<script>
+const bookList = document.getElementById('bookList');
+
+function uploadPDF(){
+  const file = document.getElementById('pdfFile').files[0];
+  if(!file){alert("Select a PDF"); return;}
+  const storageRef = firebase.storage().ref('ebooks/'+file.name);
+  storageRef.put(file).then(()=>storageRef.getDownloadURL().then(url=>{
+    const dbRef = firebase.database().ref('ebooks');
+    dbRef.push({name:file.name,url});
+  }));
+  document.getElementById('pdfFile').value='';
+}
+
+// Load books
+firebase.database().ref('ebooks').on('value',snapshot=>{
+  bookList.innerHTML='';
+  snapshot.forEach(child=>{
+    const data = child.val();
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="${data.url}" target="_blank" download>${data.name}</a>`;
+    bookList.appendChild(li);
+  });
+});
+</script>
+
+</body>
+</html>
